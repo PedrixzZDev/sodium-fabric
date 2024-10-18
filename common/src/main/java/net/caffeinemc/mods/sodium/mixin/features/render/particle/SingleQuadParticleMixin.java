@@ -44,25 +44,45 @@ public abstract class SingleQuadParticleMixin extends Particle {
      * @author JellySquid
      */
     @Overwrite
-protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quaternionf, float x, float y, float z, float tickDelta) {
-    float size = getQuadSize(tickDelta);
-    float minU = getU0();
-    float maxU = getU1();
-    float minV = getV0();
-    float maxV = getV1();
-    int light = getLightColor(tickDelta);
+    protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quaternionf, float x, float y, float z, float tickDelta) {
+        float size = this.getQuadSize(tickDelta);
+        float minU = this.getU0();
+        float maxU = this.getU1();
+        float minV = this.getV0();
+        float maxV = this.getV1();
+        int light = this.getLightColor(tickDelta);
 
-    var writer = VertexBufferWriter.of(vertexConsumer);
-    int color = ColorABGR.pack(rCol, gCol, bCol, alpha);
+        var writer = VertexBufferWriter.of(vertexConsumer);
 
-    try (MemoryStack stack = MemoryStack.stackPush()) {
-        long buffer = stack.nmalloc(4 * ParticleVertex.STRIDE);
-        ParticleVertex.put(buffer, transferVector.set(1.0F, -1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), maxU, maxV, color, light);
-        ParticleVertex.put(buffer + ParticleVertex.STRIDE, transferVector.set(1.0F, 1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), maxU, minV, color, light);
-        ParticleVertex.put(buffer + 2 * ParticleVertex.STRIDE, transferVector.set(-1.0F, 1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), minU, minV, color, light);
-        ParticleVertex.put(buffer + 3 * ParticleVertex.STRIDE, transferVector.set(-1.0F, -1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), minU, maxV, color, light);
+        int color = ColorABGR.pack(this.rCol, this.gCol, this.bCol, this.alpha);
 
-        writer.push(stack, buffer, 4, ParticleVertex.FORMAT);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            long buffer = stack.nmalloc(4 * ParticleVertex.STRIDE);
+            long ptr = buffer;
+
+            this.writeVertex(ptr, quaternionf, x, y, z, 1.0F, -1.0F, size, maxU, maxV, color, light);
+            ptr += ParticleVertex.STRIDE;
+
+            this.writeVertex(ptr, quaternionf, x, y, z, 1.0F, 1.0F, size, maxU, minV, color, light);
+            ptr += ParticleVertex.STRIDE;
+
+            this.writeVertex(ptr, quaternionf, x, y, z, -1.0F, 1.0F, size, minU, minV, color, light);
+            ptr += ParticleVertex.STRIDE;
+
+            this.writeVertex(ptr, quaternionf, x, y, z, -1.0F, -1.0F, size, minU, maxV, color, light);
+            ptr += ParticleVertex.STRIDE;
+
+            writer.push(stack, buffer, 4, ParticleVertex.FORMAT);
+        }
     }
-}
+
+    @Unique
+    private void writeVertex(long ptr, Quaternionf quaternionf, float originX, float originY, float originZ, float posX, float posY, float size, float u, float v, int color, int light) {
+        transferVector.set(posX, posY, 0.0f);
+        transferVector.rotate(quaternionf);
+        transferVector.mul(size);
+        transferVector.add(originX, originY, originZ);
+
+        ParticleVertex.put(ptr, transferVector.x(), transferVector.y(), transferVector.z(), u, v, color, light);
+    }
 }
