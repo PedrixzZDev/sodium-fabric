@@ -82,3 +82,4 @@ protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quat
 
     writer.push(4, ParticleVertex.FORMAT);
 }
+}
