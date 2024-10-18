@@ -155,17 +155,28 @@ public class ChunkVertexConsumer implements VertexConsumer {
     }
 
     private int calculateNormal() {
-    float[] v0 = vertices[0];
-    float[] v1 = vertices[1];
-    float[] v2 = vertices[2];
-    float[] v3 = vertices[3];
+    float x0 = vertices[0].x;
+    float y0 = vertices[0].y;
+    float z0 = vertices[0].z;
 
-    float dx0 = v2[0] - v0[0];
-    float dy0 = v2[1] - v0[1];
-    float dz0 = v2[2] - v0[2];
-    float dx1 = v3[0] - v1[0];
-    float dy1 = v3[1] - v1[1];
-    float dz1 = v3[2] - v1[2];
+    float x1 = vertices[1].x;
+    float y1 = vertices[1].y;
+    float z1 = vertices[1].z;
+
+    float x2 = vertices[2].x;
+    float y2 = vertices[2].y;
+    float z2 = vertices[2].z;
+
+    float x3 = vertices[3].x;
+    float y3 = vertices[3].y;
+    float z3 = vertices[3].z;
+
+    float dx0 = x2 - x0;
+    float dy0 = y2 - y0;
+    float dz0 = z2 - z0;
+    float dx1 = x3 - x1;
+    float dy1 = y3 - y1;
+    float dz1 = z3 - z1;
 
     float normX = dy0 * dz1 - dz0 * dy1;
     float normY = dz0 * dx1 - dx0 * dz1;
