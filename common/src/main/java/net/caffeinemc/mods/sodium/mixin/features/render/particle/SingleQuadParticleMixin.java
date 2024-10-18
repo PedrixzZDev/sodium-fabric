@@ -65,3 +65,4 @@ protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quat
         writer.push(stack, buffer, 4, ParticleVertex.FORMAT);
     }
 }
+}
