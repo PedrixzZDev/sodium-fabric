@@ -55,31 +55,13 @@ protected void renderRotatedQuad(VertexConsumer vertexConsumer, Quaternionf quat
     var writer = VertexBufferWriter.of(vertexConsumer);
     int color = ColorABGR.pack(rCol, gCol, bCol, alpha);
 
-    // Reutilize o objeto Vector3f
-    transferVector.set(1.0F, -1.0F, 0.0f);
-    transferVector.rotate(quaternionf);
-    transferVector.mul(size);
-    transferVector.add(x, y, z);
-    ParticleVertex.put(writer.getBuffer(), transferVector.x(), transferVector.y(), transferVector.z(), maxU, maxV, color, light);
+    try (MemoryStack stack = MemoryStack.stackPush()) {
+        long buffer = stack.nmalloc(4 * ParticleVertex.STRIDE);
+        ParticleVertex.put(buffer, transferVector.set(1.0F, -1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), maxU, maxV, color, light);
+        ParticleVertex.put(buffer + ParticleVertex.STRIDE, transferVector.set(1.0F, 1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), maxU, minV, color, light);
+        ParticleVertex.put(buffer + 2 * ParticleVertex.STRIDE, transferVector.set(-1.0F, 1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), minU, minV, color, light);
+        ParticleVertex.put(buffer + 3 * ParticleVertex.STRIDE, transferVector.set(-1.0F, -1.0F, 0.0f).rotate(quaternionf).mul(size).add(x, y, z), minU, maxV, color, light);
 
-    transferVector.set(1.0F, 1.0F, 0.0f);
-    transferVector.rotate(quaternionf);
-    transferVector.mul(size);
-    transferVector.add(x, y, z);
-    ParticleVertex.put(writer.getBuffer() + ParticleVertex.STRIDE, transferVector.x(), transferVector.y(), transferVector.z(), maxU, minV, color, light);
-
-    transferVector.set(-1.0F, 1.0F, 0.0f);
-    transferVector.rotate(quaternionf);
-    transferVector.mul(size);
-    transferVector.add(x, y, z);
-    ParticleVertex.put(writer.getBuffer() + 2 * ParticleVertex.STRIDE, transferVector.x(), transferVector.y(), transferVector.z(), minU, minV, color, light);
-
-    transferVector.set(-1.0F, -1.0F, 0.0f);
-    transferVector.rotate(quaternionf);
-    transferVector.mul(size);
-    transferVector.add(x, y, z);
-    ParticleVertex.put(writer.getBuffer() + 3 * ParticleVertex.STRIDE, transferVector.x(), transferVector.y(), transferVector.z(), minU, maxV, color, light);
-
-    writer.push(4, ParticleVertex.FORMAT);
-}
+        writer.push(stack, buffer, 4, ParticleVertex.FORMAT);
+    }
 }
