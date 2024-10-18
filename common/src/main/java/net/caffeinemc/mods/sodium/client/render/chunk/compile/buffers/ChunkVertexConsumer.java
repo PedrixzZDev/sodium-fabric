@@ -155,41 +155,29 @@ public class ChunkVertexConsumer implements VertexConsumer {
     }
 
     private int calculateNormal() {
-        final float x0 = this.vertices[0].x;
-        final float y0 = this.vertices[0].y;
-        final float z0 = this.vertices[0].z;
+    float[] v0 = vertices[0];
+    float[] v1 = vertices[1];
+    float[] v2 = vertices[2];
+    float[] v3 = vertices[3];
 
-        final float x1 = this.vertices[1].x;
-        final float y1 = this.vertices[1].y;
-        final float z1 = this.vertices[1].z;
+    float dx0 = v2[0] - v0[0];
+    float dy0 = v2[1] - v0[1];
+    float dz0 = v2[2] - v0[2];
+    float dx1 = v3[0] - v1[0];
+    float dy1 = v3[1] - v1[1];
+    float dz1 = v3[2] - v1[2];
 
-        final float x2 = this.vertices[2].x;
-        final float y2 = this.vertices[2].y;
-        final float z2 = this.vertices[2].z;
+    float normX = dy0 * dz1 - dz0 * dy1;
+    float normY = dz0 * dx1 - dx0 * dz1;
+    float normZ = dx0 * dy1 - dy0 * dx1;
 
-        final float x3 = this.vertices[3].x;
-        final float y3 = this.vertices[3].y;
-        final float z3 = this.vertices[3].z;
+    float length = (float) Math.sqrt(normX * normX + normY * normY + normZ * normZ);
+    if (length != 0.0 && length != 1.0) {
+        normX /= length;
+        normY /= length;
+        normZ /= length;
+    }
 
-        final float dx0 = x2 - x0;
-        final float dy0 = y2 - y0;
-        final float dz0 = z2 - z0;
-        final float dx1 = x3 - x1;
-        final float dy1 = y3 - y1;
-        final float dz1 = z3 - z1;
-
-        float normX = dy0 * dz1 - dz0 * dy1;
-        float normY = dz0 * dx1 - dx0 * dz1;
-        float normZ = dx0 * dy1 - dy0 * dx1;
-
-        // normalize by length for the packed normal
-        float length = (float) Math.sqrt(normX * normX + normY * normY + normZ * normZ);
-        if (length != 0.0 && length != 1.0) {
-            normX /= length;
-            normY /= length;
-            normZ /= length;
-        }
-
-        return NormI8.pack(normX, normY, normZ);
+    return NormI8.pack(normX, normY, normZ);
     }
 }
