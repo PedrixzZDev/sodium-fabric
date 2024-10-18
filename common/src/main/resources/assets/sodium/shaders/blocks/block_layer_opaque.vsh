@@ -5,26 +5,21 @@
 #import <sodium:include/chunk_matrices.glsl>
 #import <sodium:include/chunk_material.glsl>
 
-out vec4 v_Color;
-out vec2 v_TexCoord;
+out mediump vec4 v_Color;
+out mediump vec2 v_TexCoord;
 
 out float v_MaterialMipBias;
-#ifdef USE_FRAGMENT_DISCARD
 out float v_MaterialAlphaCutoff;
-#endif
 
-#ifdef USE_FOG
 out float v_FragDistance;
-#endif
 
 uniform int u_FogShape;
 uniform vec3 u_RegionOffset;
 
-uniform sampler2D u_LightTex; // The light map texture sampler
+uniform sampler2D u_LightTex;
 
 uvec3 _get_relative_chunk_coord(uint pos) {
-    // Packing scheme is defined by LocalSectionIndex
-    return uvec3(pos) >> uvec3(5u, 0u, 2u) & uvec3(7u, 3u, 7u);
+    return uvec3(pos) >> uvec3(5, 0, 2);
 }
 
 vec3 _get_draw_translation(uint pos) {
@@ -34,23 +29,18 @@ vec3 _get_draw_translation(uint pos) {
 void main() {
     _vert_init();
 
-    // Transform the chunk-local vertex position into world model space
     vec3 translation = u_RegionOffset + _get_draw_translation(_draw_id);
-    vec3 position = _vert_position + translation;
+    vec3 position = _vert_position;
+    position += translation;
 
-#ifdef USE_FOG
     v_FragDistance = getFragDistance(u_FogShape, position);
-#endif
 
-    // Transform the vertex position into model-view-projection space
     gl_Position = u_ProjectionMatrix * u_ModelViewMatrix * vec4(position, 1.0);
 
-    // Add the light color to the vertex color, and pass the texture coordinates to the fragment shader
-    v_Color = _vert_color * texture(u_LightTex, _vert_tex_light_coord);
+    vec4 lightColor = texture(u_LightTex, _vert_tex_light_coord);
+    v_Color = _vert_color * lightColor;
     v_TexCoord = _vert_tex_diffuse_coord;
 
-    v_MaterialMipBias = _material_mip_bias(_material_params);
-#ifdef USE_FRAGMENT_DISCARD
-    v_MaterialAlphaCutoff = _material_alpha_cutoff(_material_params);
-#endif
+    v_MaterialMipBias = _material_params.mipBias;
+    v_MaterialAlphaCutoff = _material_params.alphaCutoff;
 }
