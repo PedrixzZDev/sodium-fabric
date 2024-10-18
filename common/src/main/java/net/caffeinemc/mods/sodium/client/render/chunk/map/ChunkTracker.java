@@ -69,25 +69,33 @@ public class ChunkTracker implements ClientChunkEventListener {
     }
 
     private void updateMerged(int x, int z) {
-        long key = ChunkPos.asLong(x, z);
+    long key = ChunkPos.asLong(x, z);
+    int flags = chunkStatus.get(key);
 
-        int flags = this.chunkStatus.get(key);
-
-        for (int ox = -1; ox <= 1; ox++) {
-            for (int oz = -1; oz <= 1; oz++) {
-                flags &= this.chunkStatus.get(ChunkPos.asLong(ox + x, oz + z));
-            }
+    // Crie um cache local para armazenar os resultados
+    int[][] neighborFlags = new int[3][3];
+    for (int ox = -1; ox <= 1; ox++) {
+        for (int oz = -1; oz <= 1; oz++) {
+            neighborFlags[ox + 1][oz + 1] = chunkStatus.get(ChunkPos.asLong(ox + x, oz + z));
         }
+    }
 
-        if (flags == ChunkStatus.FLAG_ALL) {
-            if (this.chunkReady.add(key) && !this.unloadQueue.remove(key)) {
-                this.loadQueue.add(key);
-            }
-        } else {
-            if (this.chunkReady.remove(key) && !this.loadQueue.remove(key)) {
-                this.unloadQueue.add(key);
-            }
+    // Reduza o número de operações
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            flags &= neighborFlags[i][j];
         }
+    }
+
+    if (flags == ChunkStatus.FLAG_ALL) {
+        if (chunkReady.add(key) && !unloadQueue.remove(key)) {
+            loadQueue.add(key);
+        }
+    } else {
+        if (chunkReady.remove(key) && !loadQueue.remove(key)) {
+            unloadQueue.add(key);
+        }
+    }
     }
 
     public LongCollection getReadyChunks() {
